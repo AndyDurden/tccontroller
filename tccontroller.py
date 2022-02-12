@@ -34,7 +34,14 @@ def xyz_to_tcstring(filename):
 def dict_to_file(d, filepath):
   f = open(filepath, 'w')
   for key, value in d.iteritems():
-    f.write(str(key)+"     "+str(value)+"\n")
+    f.write(str(key)+" "+str(value)+"\n")
+  f.close()
+
+def dicts_to_file(dlist, filepath):
+  f = open(filepath, 'w')
+  for d in dlist:
+    for key, value in d.iteritems():
+      f.write(str(key)+" "+str(value)+"\n")
   f.close()
 
 # we may need to be careful about endian-ness if this runs on a different machine than TC
@@ -103,8 +110,8 @@ class job:
     search_replace_file(self.dir+tempname, "coords.xyz", self.xyzpath.split("/")[-1]) 
     if self.n==0:
       search_replace_file(self.dir+tempname, "tdci_diabatize_orbs yes", "tdci_diabatize_orbs no")
-      search_replace_file(self.dir+tempname, "tdci_recn_readfile recn_init.csv", "")
-      search_replace_file(self.dir+tempname, "tdci_imcn_readfile imcn_init.csv", "")
+      search_replace_file(self.dir+tempname, "tdci_recn_readfile recn_init.bin", "")
+      search_replace_file(self.dir+tempname, "tdci_imcn_readfile imcn_init.bin", "")
       search_replace_file(self.dir+tempname, "tdci_prevorbs_readfile PrevC.bin", "")
       search_replace_file(self.dir+tempname, "tdci_prevcoords_readfile PrevCoors.bin", "")
 
@@ -112,8 +119,8 @@ class job:
       pjobd = self.pjob.dir
       shutil.copy(pjobd+"/NewCoors.bin", self.dir+"/PrevCoors.bin")
       shutil.copy(pjobd+"/NewC.bin", self.dir+"/PrevC.bin")
-      shutil.copy(pjobd+"/ReCn_end.csv", self.dir+"/recn_init.csv")
-      shutil.copy(pjobd+"/ImCn_end.csv", self.dir+"/imcn_init.csv")
+      shutil.copy(pjobd+"/ReCn_end.bin", self.dir+"/recn_init.bin")
+      shutil.copy(pjobd+"/ImCn_end.bin", self.dir+"/imcn_init.bin")
 
   def clean_files(self):
     if os.path.exists(self.dir):
@@ -150,12 +157,15 @@ class job:
         recn = read_csv_array(self.dir+"ReCn_end.csv")
         imcn = read_csv_array(self.dir+"ImCn_end.csv")
         norm = np.sum(recn**2) + np.sum(imcn**2)
-        print("Final wfn norm: "+str(norm))
-        if ((norm<0.5) or (norm>2.0)):
+        print("Output looks good! Final wfn norm: "+str(norm))
+        if ((norm<0.5) or (norm>2.0) or (np.isnan(norm))):
           print("ERROR: Norm out of bounds\n")
           outputgood = False
         if (np.sum(grad)<0.0001):
           print("WARNING: gradient is zero ("+str(np.sum(grad))+")\n")
+        if (np.isnan(np.sum(grad))):
+          print("ERROR: nan in gradient\n")
+          outputgood = False
       
       if outputgood: # Everything checks out!
         return (grad, recn, imcn)
