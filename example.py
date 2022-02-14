@@ -1,4 +1,5 @@
 import tccontroller
+import numpy as np
 
 
 
@@ -14,25 +15,27 @@ f.write(job_template_contents)
 f.close()
 
 
-nstep = 2000
+nfields = 1                # number of distinct fields (generally for multichromatic floquet)
+nstep = 2000               # number of timesteps
+tdci_simulation_time = 2   # in femtoseconds
 tdci_options = {
   "gpus"                 : "1 0",
   "timings"              : "yes",
   "precision"            : "double",
   "threall"              : "1.0e-20",
   "convthre"             : "1.0e-6",
-  "basis"                : "6-31gs",
+  "basis"                : "sto-3g",
   "coordinates"          : "coords.xyz", # <-- don't change this
   "method"               : "hf",
   "run"                  : "tdci", # <-- don't change this
   "charge"               : "0",
   "spinmult"             : "1",
   "csf_basis"            : "no",
-  "tdci_simulation_time" : "2",
+  "tdci_simulation_time" : str(tdci_simulation_time),
   "tdci_nstep"           : str(nstep),
   "tdci_eshift"          : "gs",
   "tdci_stepprint"       : "1",
-  "tdci_nfields"         : "1",
+  "tdci_nfields"         : str(nfields),
   "tdci_laser_freq"      : "2.5311296E+15",  
   "tdci_photoneng"       : "0.38467766",
   "tdci_fstrength"       : "1.0E+16",   # TODO: replace field generation params with file readin
@@ -54,6 +57,7 @@ tdci_options = {
   "cascharges"           : "yes",
   "cas_ntos"             : "yes",
   "tdci_gradient"        : "yes",  # <-- don't change this
+  "fieldfile0"           : "field0.csv",
 
   # These options will be removed on first step, don't change them.
   "tdci_diabatize_orbs"  : "yes",
@@ -66,10 +70,38 @@ tdci_options = {
 TDCI_TEMPLATE = "/home/adurden/tccontroller/templates/tdci.in"
 tccontroller.dict_to_file(tdci_options, TDCI_TEMPLATE)
 
+# Define the external field
+# ======================================
+# Field file should include values for half-steps, so the length of the array
+#   should be 2*nsteps!
+
+# Depending on the external field you want, you might have to write some
+#   code here to generate the waveform, below is a CW tuned to ethylene
+#   Function should accept np.arrays in units of AU time and return AU E-field units.
+def f0_values(t):
+  EPSILON_C = 0.00265316
+  E_FIELD_AU = 5.142206707E+11
+  HZtoAU = 2.418884E-17
+  E_strength_Wm2 = 1.0E+16 # In W/m^2
+  E_str = (np.sqrt(2.0*E_strength_Wm2 / EPSILON_C) )/E_FIELD_AU  # transform to au field units
+  field_freq_hz = 2.5311296E+15 # tuned to S0 <-> S1 for rabi flop example
+  return E_str*np.sin(2.0*np.pi * field_freq_hz*HZtoAU * t)
+
+FIELD_INFO = { "tdci_simulation_time": tdci_simulation_time,
+               "nstep"               : nstep,
+               "nfields"             : nfields,
+               "f0"                  : f0_values
+             }
+
+
+
+# End field definition
+# ======================================
+
 JOBDIR = "/home/adurden/jobs/testing/"
 SCHEDULER = False # Not implemented, but this will hook into sbatch/squeue
 
-tc = tccontroller.tccontroller(JOBDIR, JOB_TEMPLATE, TDCI_TEMPLATE, SCHEDULER)
+tc = tccontroller.tccontroller(JOBDIR, JOB_TEMPLATE, TDCI_TEMPLATE, FIELD_INFO, SCHEDULER)
 print("initialized tccontroller\n")
 
 

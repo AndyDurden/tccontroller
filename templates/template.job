@@ -1,8 +1,0 @@
-#!/bin/bash
-
-source /home/adurden/.bashrc
-
-cd temppath
-
-/home/adurden/terachem/build/bin/terachem tempname.in -g 0 > tempname.out
-

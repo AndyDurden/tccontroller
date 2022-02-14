@@ -4,7 +4,9 @@ from __future__ import print_function
 import numpy as np
 import struct, shutil, os, subprocess, time
 
-
+FStoAU = 41.341375
+EPSILON_C = 0.00265316
+E_FIELD_AU = 5.142206707E+11
 
 
 
@@ -83,7 +85,7 @@ def makedirs(dirstr):
 
 
 class job:
-  def __init__(self, n, xyzpath, pjob, JOBDIR, JOB_TEMPLATE, TDCI_TEMPLATE, SCHEDULER=False):
+  def __init__(self, n, xyzpath, pjob, JOBDIR, JOB_TEMPLATE, TDCI_TEMPLATE, FIELD_INFO, SCHEDULER=False):
     self.n = n
     self.pjob = pjob
     self.dir = JOBDIR+"electronic/"+str(n)+"/"
@@ -92,6 +94,7 @@ class job:
     self.TDCI_TEMPLATE=TDCI_TEMPLATE
     self.SCHEDULER=SCHEDULER
     self.xyzpath = xyzpath
+    self.FIELD_INFO = FIELD_INFO
 
   def start(self):
     p = subprocess.Popen( 'bash '+self.dir+'tdci.job', shell=True)
@@ -108,6 +111,7 @@ class job:
     tempname = "test"+str(self.n)+".in"
     shutil.copy(self.TDCI_TEMPLATE, self.dir+"/"+tempname)
     search_replace_file(self.dir+tempname, "coords.xyz", self.xyzpath.split("/")[-1]) 
+    self.make_fieldfiles()
     if self.n==0:
       search_replace_file(self.dir+tempname, "tdci_diabatize_orbs yes", "tdci_diabatize_orbs no")
       search_replace_file(self.dir+tempname, "tdci_recn_readfile recn_init.bin", "")
@@ -125,6 +129,20 @@ class job:
   def clean_files(self):
     if os.path.exists(self.dir):
       shutil.rmtree(self.dir)
+
+  def make_fieldfiles(self):
+    # Field file should include values for half-steps, so the length of the array
+    #   should be 2*nsteps!
+    FStoAU = 41.341375
+    T = self.FIELD_INFO["tdci_simulation_time"]
+    N = self.FIELD_INFO["nstep"]
+    t = np.linspace( self.n*T*FStoAU, (self.n+1)*T*FStoAU, 2*N)
+    for i in range(0, self.FIELD_INFO["nfields"]):
+      vals = self.FIELD_INFO["f"+str(i)](t)
+      fieldfile = open(self.dir+"field"+str(i)+".csv", "w")
+      for v in vals:
+        fieldfile.write( '{:11.8e}'.format(v) + "," )
+      fieldfile.close()
 
   def run_interactive(self):
     # Run the job
@@ -198,19 +216,20 @@ class job:
 
 
 class tccontroller:
-  def __init__(self, JOBDIR, JOB_TEMPLATE, TDCI_TEMPLATE, SCHEDULER=False):
+  def __init__(self, JOBDIR, JOB_TEMPLATE, TDCI_TEMPLATE, FIELD_INFO, SCHEDULER=False):
     self.N = 0
     self.jobs = []
     self.JOBDIR=JOBDIR
     self.JOB_TEMPLATE=JOB_TEMPLATE
     self.TDCI_TEMPLATE=TDCI_TEMPLATE
     self.SCHEDULER=SCHEDULER
+    self.FIELD_INFO=FIELD_INFO
 
   def nextstep(self, xyzpath):
     if self.N == 0:
-      j = job(self.N, xyzpath, None, self.JOBDIR, self.JOB_TEMPLATE, self.TDCI_TEMPLATE, self.SCHEDULER)
+      j = job(self.N, xyzpath, None, self.JOBDIR, self.JOB_TEMPLATE, self.TDCI_TEMPLATE, self.FIELD_INFO, self.SCHEDULER)
     else:
-      j = job(self.N, xyzpath, self.jobs[-1], self.JOBDIR, self.JOB_TEMPLATE, self.TDCI_TEMPLATE, self.SCHEDULER)
+      j = job(self.N, xyzpath, self.jobs[-1], self.JOBDIR, self.JOB_TEMPLATE, self.TDCI_TEMPLATE, self.FIELD_INFO, self.SCHEDULER)
     self.jobs.append(j)
     self.N+=1
     j.run_interactive()
