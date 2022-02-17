@@ -175,7 +175,7 @@ class job:
         recn = read_csv_array(self.dir+"ReCn_end.csv")
         imcn = read_csv_array(self.dir+"ImCn_end.csv")
         norm = np.sum(recn**2) + np.sum(imcn**2)
-        print("Output looks good! Final wfn norm: "+str(norm))
+        print("Final wfn norm: "+str(norm))
         if ((norm<0.5) or (norm>2.0) or (np.isnan(norm))):
           print("ERROR: Norm out of bounds\n")
           outputgood = False
@@ -184,8 +184,8 @@ class job:
         if (np.isnan(np.sum(grad))):
           print("ERROR: nan in gradient\n")
           outputgood = False
-      
       if outputgood: # Everything checks out!
+        print("Output looks good!")
         return (grad, recn, imcn)
       else: # Outputs bad, try redoing the job!
         print("Output is bad. Restarting the job.")

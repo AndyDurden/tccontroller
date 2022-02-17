@@ -4,6 +4,8 @@ import numpy as np
 
 
 TERACHEM = "/home/adurden/terachem/build/bin/" # terachem executable stored here
+# make sure you include temppath and tempname in your job template!
+#  those keywords are search and replaced
 job_template_contents = "#!/bin/bash\n\
                          source /home/adurden/.bashrc\n\
                          cd temppath\n\
@@ -16,8 +18,8 @@ f.close()
 
 
 nfields = 1                # number of distinct fields (generally for multichromatic floquet)
-nstep = 2000               # number of timesteps
-tdci_simulation_time = 2   # in femtoseconds
+nstep = 12000               # number of timesteps
+tdci_simulation_time = 12   # in femtoseconds
 tdci_options = {
   "gpus"                 : "1 0",
   "timings"              : "yes",
@@ -57,7 +59,7 @@ tdci_options = {
   "cascharges"           : "yes",
   "cas_ntos"             : "yes",
   "tdci_gradient"        : "yes",  # <-- don't change this
-  "fieldfile0"           : "field0.csv",
+  "tdci_fieldfile0"      : "field0.csv",
 
   # These options will be removed on first step, don't change them.
   "tdci_diabatize_orbs"  : "yes",
@@ -84,7 +86,7 @@ def f0_values(t):
   HZtoAU = 2.418884E-17
   E_strength_Wm2 = 1.0E+16 # In W/m^2
   E_str = (np.sqrt(2.0*E_strength_Wm2 / EPSILON_C) )/E_FIELD_AU  # transform to au field units
-  field_freq_hz = 2.5311296E+15 # tuned to S0 <-> S1 for rabi flop example
+  field_freq_hz = 3.444030610581e+15 # tuned to S0 <-> S1 for rabi flop example
   return E_str*np.sin(2.0*np.pi * field_freq_hz*HZtoAU * t)
 
 FIELD_INFO = { "tdci_simulation_time": tdci_simulation_time,
@@ -109,7 +111,7 @@ print("initialized tccontroller\n")
 # Doing the next TDCI step is as simple as calling tc.nextstep and feeding it the newest coordinates
 initial_xyzfile = "/home/adurden/jobs/testing/ethylene.xyz"
 grad, recn, imcn = tc.nextstep(initial_xyzfile)
-
+print((grad,recn,imcn))
 
 # Let's do 10 steps, just feeding TDCI the same geometry. 
 for i in range(0, 10):

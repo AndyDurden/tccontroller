@@ -1,0 +1,44 @@
+
+gpus 1 0
+timings yes
+precision double
+threall 1.0e-20
+convthre 1.0e-6
+basis sto-3g
+spinmult 1
+charge 0
+method hf
+run tdci
+csf_basis no
+coordinates ethylene.xyz
+
+tdci_simulation_time 24
+tdci_nstep 24000
+
+tdci_nfields 1
+tdci_laser_freq 3.444030610581e+15
+tdci_fdirection x
+tdci_photoneng 0.38467766
+tdci_diabatize_orbs no
+tdci_gradient yes
+tdci_stepprint 1
+tdci_ftype cw
+tdci_floquet_photons 3
+tdci_eshift gs
+tdci_floquet no
+tdci_corrfn_t p0
+tdci_fstrength 1.0E+16
+
+casci yes
+ci_solver direct
+dcimaxiter 300
+dciprintinfo yes
+dcipreconditioner orbenergy
+
+active 2
+closed 7
+cassinglets 3
+castriplets 0
+cas_ntos yes
+cascharges yes
+
