@@ -95,6 +95,7 @@ class job:
     self.SCHEDULER=SCHEDULER
     self.xyzpath = xyzpath
     self.FIELD_INFO = FIELD_INFO
+    self.restarts = 0
 
   def start(self):
     p = subprocess.Popen( 'bash '+self.dir+'tdci.job', shell=True)
@@ -163,13 +164,13 @@ class job:
       grad, recn, imcn = None, None, None
       if not os.path.exists(self.dir+"tdcigrad.csv"):
         outputgood = False
-        print("ERROR: tdcigrad.csv missing\n")
+        print("ERROR: tdcigrad.csv missing")
       if not os.path.exists(self.dir+"ReCn_end.csv"):
         outputgood = False
-        print("ERROR: ReCn_end.csv missing\n")
+        print("ERROR: ReCn_end.csv missing")
       if not os.path.exists(self.dir+"ImCn_end.csv"):
         outputgood = False
-        print("ERROR: ImCn_end.csv missing\n")
+        print("ERROR: ImCn_end.csv missing")
       if outputgood: # files exist, lets get the output
         grad = read_csv_array(self.dir+"tdcigrad.csv")
         recn = read_csv_array(self.dir+"ReCn_end.csv")
@@ -177,18 +178,20 @@ class job:
         norm = np.sum(recn**2) + np.sum(imcn**2)
         print("Final wfn norm: "+str(norm))
         if ((norm<0.5) or (norm>2.0) or (np.isnan(norm))):
-          print("ERROR: Norm out of bounds\n")
+          print("ERROR: Norm out of bounds")
           outputgood = False
         if (np.sum(grad)<0.0001):
-          print("WARNING: gradient is zero ("+str(np.sum(grad))+")\n")
+          print("WARNING: gradient is zero ("+str(np.linalg.norm(grad))+")")
         if (np.isnan(np.sum(grad))):
-          print("ERROR: nan in gradient\n")
+          print("ERROR: nan in gradient")
           outputgood = False
       if outputgood: # Everything checks out!
         print("Output looks good!")
         return (grad, recn, imcn)
       else: # Outputs bad, try redoing the job!
         print("Output is bad. Restarting the job.")
+        makedirs("badjobs/"+str(self.n)+"_"+str(retries))
+        shutil.copytree( self.dir, "badjobs/"+str(self.n)+"_"+str(retries))
       retries+=1
     print("Went through 20 retries and output is still bad T_T\n")
     return 1
@@ -210,9 +213,21 @@ class job:
 
   def output(self):
     grad = read_csv_array(self.dir+"tdcigrad.csv")
+    grad.resize(len(grad)/3, 3)
     recn = read_csv_array(self.dir+"ReCn_end.csv")
     imcn = read_csv_array(self.dir+"ImCn_end.csv")
-    return (grad, recn, imcn)
+
+    output = { "recn": recn,  # 1d array, number of determinants
+               "imcn": imcn,  # 1d array, number of determinants
+               "eng": None,    # float, Energy of current wfn
+               "grad": grad,    # 2d array, Natoms x 3 dimensions.
+               "krylov_states": None,  # 2d array of CI vectors of each approx eigenstate
+               "krylov_energies": None, # 1d array of energies of each approx eigenstate
+               "krylov_gradients": None # 3d array of approx eigenstate gradients, Napprox x Natoms x 3 dim.
+             }
+
+
+    return output
 
 
 class tccontroller:

@@ -61,6 +61,11 @@ tdci_options = {
   "tdci_gradient"        : "yes",  # <-- don't change this
   "tdci_fieldfile0"      : "field0.csv",
 
+  # Krylov subspace options
+  #"tdci_krylov_end"      : "yes",
+  #"tdci_krylov_end_n"    : "25",
+  #"tdci_krylov_end_interval": "5",
+
   # These options will be removed on first step, don't change them.
   "tdci_diabatize_orbs"  : "yes",
   "tdci_recn_readfile"   : "recn_init.bin",
@@ -107,16 +112,29 @@ tc = tccontroller.tccontroller(JOBDIR, JOB_TEMPLATE, TDCI_TEMPLATE, FIELD_INFO, 
 print("initialized tccontroller\n")
 
 
+"""
+  Dictionary keys in TCdata:
+           "recn"              - 1d array, number of determinants
+           "imcn"              - 1d array, number of determinants
+           "eng"               - float, Energy of current wfn
+           "grad"              - 2d array, Natoms x 3 dimensions.
+           "krylov_states"     - 2d array of CI vectors of each approx eigenstate
+           "krylov_energies"   - 1d array of energies of each approx eigenstate
+           "krylov_gradients"  - 3d array of approx eigenstate gradients, Napprox x Natoms x 3dim
+
+"""
 
 # Doing the next TDCI step is as simple as calling tc.nextstep and feeding it the newest coordinates
 initial_xyzfile = "/home/adurden/jobs/testing/ethylene.xyz"
-grad, recn, imcn = tc.nextstep(initial_xyzfile)
-print((grad,recn,imcn))
+TCdata = tc.nextstep(initial_xyzfile)
+print(TCdata)
 
 # Let's do 10 steps, just feeding TDCI the same geometry. 
 for i in range(0, 10):
   print("step done!")
-  grad, recn, imcn = tc.nextstep(initial_xyzfile)
-  print((grad,recn,imcn))
+  TCdata = tc.nextstep(initial_xyzfile)
+  print(TCdata)
 
 print("all done!")
+
+
