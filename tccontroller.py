@@ -319,6 +319,7 @@ class job:
     if not filesgood:
       return False
     grad = read_bin_array(self.dir+"gradinit.bin", 3*self.Natoms)
+    grad.resize((self.Natoms,3))
     #E = float(read_bin_array(self.dir+"Einit.bin", 1)[0])
     E = float(self.scan_outfile(["Initial", "energy:"], 2))
     return { "grad": grad,

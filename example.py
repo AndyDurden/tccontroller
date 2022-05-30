@@ -142,7 +142,7 @@ print("Gradient output end.")
 
 
 """
-  Dictionary keys in nextstep output:
+  Dictionary keys in hessian output:
            "hessian"           - 2d array, (3*Natoms) x (3*Natoms)
            "dipolederiv"       - Dipole Derivatives, 1d array 3*3*Natoms
 
