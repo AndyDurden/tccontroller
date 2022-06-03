@@ -127,13 +127,15 @@ initial_xyzfile = "/home/adurden/jobs/testing/ethylene.xyz"
 
 """
   Dictionary keys in grad output:
-           "eng"               - float, Energy of current wfn
-           "grad"              - 2d array, Natoms x 3 dimensions.
+	   "eng"               - float, Energy of current wfn
+	   "grad"              - 2d array, Natoms x 3 dimensions.
+	   "states"            - 2d array, Nstates x ndets.
+	   "states_eng"        - 2d array, Nstates.
 
   INPUT:
-            xyz                - string, path of xyz file.
-            ReCn (optional)    - Real component of CI vector. If none, ground state is used. 
-            ImCn (optional)    - Imaginary component of CI vector.
+	    xyz                - string, path of xyz file.
+	    ReCn (optional)    - Real component of CI vector. If none, ground state is used. 
+	    ImCn (optional)    - Imaginary component of CI vector.
 """
 grad_data = tc.grad(initial_xyzfile)
 print("Gradient output")
